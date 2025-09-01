@@ -3,66 +3,224 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Cuddle Clash – What’s Next?</title>
+  <title>Cuddle Clash • Upload Router</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root { color-scheme: light dark; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-           margin: 0; display: grid; place-items: center; min-height: 100svh;
-           background: radial-gradient(1200px 800px at 50% -20%, #f7f9fc, #e9eef6);
+    :root{
+      --bg:#f7f7fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#6b7280;
+      --brand:#4f46e5;      /* indigo-600 */
+      --brand-2:#22c55e;    /* green-500 */
+      --ring: 0 0 0 6px rgb(79 70 229 / 10%);
+      --shadow: 0 10px 30px rgba(2,8,23,0.08);
+      --radius:16px;
     }
-    .card { background: rgba(255,255,255,.9); border-radius: 18px; box-shadow: 0 8px 30px rgba(0,0,0,.08);
-            padding: clamp(20px, 3vw, 36px); max-width: 720px; width: min(92vw, 720px); }
-    h1 { margin: 0 0 10px; font-size: clamp(22px, 3.2vw, 34px); }
-    p  { margin: 0 0 18px; line-height: 1.5; }
-    .row { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 14px; }
-    @media (min-width: 560px){ .row { grid-template-columns: 1fr 1fr; } }
-    a.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
-            padding: 14px 18px; border-radius: 12px; font-weight: 700; letter-spacing: .2px;
-            border: 2px solid #111; color: #111; background: #ffd54f; transition: transform .05s ease; }
-    a.btn.secondary { background: #90caf9; }
-    a.btn:hover { transform: translateY(-1px); }
-    .meta { margin-top: 14px; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; opacity: .7; }
-    .warn { color: #b00020; font-weight: 600; }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      display:flex; align-items:center; justify-content:center; padding:32px;
+    }
+    .wrap{width:100%; max-width:760px}
+    .card{
+      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:28px clamp(24px,3.5vw,40px);
+    }
+    .brand{
+      display:flex; align-items:center; gap:12px; margin-bottom:18px;
+    }
+    .logo{
+      width:40px; height:40px; border-radius:10px;
+      background: conic-gradient(from 180deg at 50% 50%, #fde68a, #a78bfa, #22d3ee, #86efac, #fde68a);
+      box-shadow: inset 0 0 0 4px #fff, 0 6px 16px rgba(17,24,39,.12);
+    }
+    h1{font-size: clamp(22px, 3.2vw, 28px); margin:0}
+    p{margin:6px 0 0; color:var(--muted)}
+    .grid{
+      display:grid; gap:18px; grid-template-columns: 1fr; margin-top:20px;
+    }
+    .row{display:grid; gap:12px; grid-template-columns: 1fr 1fr}
+    .field{
+      display:flex; flex-direction:column; gap:8px;
+      background:#fafafa; border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px;
+    }
+    .field label{font-size:12px; color:#475569; letter-spacing:.02em}
+    .field input{
+      border:none; background:transparent; font-size:15px; outline:none; padding:4px 2px;
+    }
+    .field input:focus{box-shadow:var(--ring)}
+    .pill{
+      display:inline-flex; align-items:center; gap:10px; border:1px solid #e5e7eb; background:#fff;
+      padding:10px 14px; border-radius:999px; color:#334155; font-size:14px;
+    }
+    .btns{display:flex; gap:12px; flex-wrap:wrap; margin-top:8px}
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center; gap:10px;
+      padding:14px 18px; border-radius:12px; border:1px solid #e5e7eb; background:#fff;
+      text-decoration:none; color:#111827; font-weight:600; transition:transform .05s ease, box-shadow .2s ease, border-color .2s ease;
+      box-shadow:var(--shadow);
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn--primary{background:var(--brand); color:#fff; border-color:transparent}
+    .btn--secondary{background:#fff}
+    .btn--success{background:var(--brand-2); color:#083b17; border-color:transparent}
+    .hint{font-size:12px; color:var(--muted)}
+    .sep{height:1px; background:#e5e7eb; margin:20px 0}
+    .code{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:13px; background:#0b1020; color:#d1e7ff; padding:10px 12px; border-radius:10px; overflow:auto}
+    @media(max-width:720px){
+      .row{grid-template-columns:1fr}
+    }
+    .copy{
+      border:none; background:#eef2ff; color:#3730a3; font-weight:600; border-radius:10px; padding:10px 12px; cursor:pointer;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Great job! What’s next?</h1>
-    <p>We’ll keep your <strong>Order ID</strong> and <strong>Email</strong> attached to the next step automatically.</p>
+  <div class="wrap">
+    <div class="card">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>Cuddle Clash — Upload Portal</h1>
+          <p>Keep the values below; the buttons forward them automatically.</p>
+        </div>
+      </div>
 
-    <div class="row">
-      <a id="addLink" class="btn" href="#">➕ Add a stuffy</a>
-      <a id="doneLink" class="btn secondary" href="#">✅ I’m done (review & confirm)</a>
+      <div class="grid">
+        <div class="row">
+          <div class="field">
+            <label>Order ID</label>
+            <input id="order" placeholder="e.g. Rieniets_25-09-01-001">
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input id="email" type="email" placeholder="you@example.com">
+          </div>
+        </div>
+
+        <div class="pill" title="Quick view of what will be passed">
+          <span>Passing:</span>
+          <strong id="preview"></strong>
+          <button class="copy" id="copyQuery" type="button">Copy query</button>
+        </div>
+
+        <div class="btns">
+          <a id="toB" class="btn btn--primary" target="_self" rel="nofollow">
+            ➕ Add another stuffy
+          </a>
+          <a id="toC" class="btn btn--success" target="_self" rel="nofollow">
+            ✅ I’m done — review my order
+          </a>
+        </div>
+
+        <div class="sep"></div>
+
+        <div>
+          <p class="hint">If the buttons don’t include your data, it means the URL didn’t have the parameters. You can also copy/paste your direct links:</p>
+          <div class="field">
+            <label>Direct link to Form B</label>
+            <div class="row" style="gap:8px">
+              <input id="linkB" readonly>
+              <button class="copy" data-copy="#linkB">Copy</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Direct link to Form C</label>
+            <div class="row" style="gap:8px">
+              <input id="linkC" readonly>
+              <button class="copy" data-copy="#linkC">Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <details>
+          <summary class="hint">Debug info</summary>
+          <pre id="debug" class="code"></pre>
+        </details>
+      </div>
     </div>
-
-    <p class="meta">
-      Order: <span id="oid">—</span> · Email: <span id="eml">—</span>
-      <span id="missing" class="warn" style="display:none"> · Missing parameters — go back and try again.</span>
-    </p>
   </div>
 
   <script>
-    // ====== EDIT THESE LINES ======
-    const FORM_A = "3NadXQ"; // optional
-    const FORM_B = "w8XMZx";   // Add-a-Stuffy (yours)
-    const FORM_C = "mVKxrg";  // Done/Confirm (replace with your Tally Form C ID)
-    // ==============================
+    // === CUSTOMIZE THESE TWO URLS (no params) ===
+    const FORM_B_URL = "https://tally.so/r/w8XMZx";
+    const FORM_C_URL = "https://tally.so/r/mVKxrg";
+    // ===========================================
 
-    const u = new URL(location.href);
-    const order_id = u.searchParams.get("order_id") || "";
-    const email    = u.searchParams.get("email")    || "";
+    const $ = sel => document.querySelector(sel);
+    const orderInput = $("#order");
+    const emailInput = $("#email");
+    const toB = $("#toB");
+    const toC = $("#toC");
+    const linkB = $("#linkB");
+    const linkC = $("#linkC");
+    const preview = $("#preview");
+    const debug = $("#debug");
 
-    const byId = id => document.getElementById(id);
-    byId("oid").textContent = order_id || "—";
-    byId("eml").textContent = email    || "—";
-    if(!order_id || !email){ byId("missing").style.display = "inline"; }
+    function parseQuery() {
+      const params = {};
+      for (const [k, v] of new URLSearchParams(location.search)) {
+        params[k] = v;
+      }
+      return params;
+    }
 
-    const qp = (id, em) => `?order_id=${encodeURIComponent(id)}&email=${encodeURIComponent(em)}`;
-    const addUrl  = `https://tally.so/r/${FORM_B}${qp(order_id, email)}`;
-    const doneUrl = `https://tally.so/r/${FORM_C}${qp(order_id, email)}`;
+    function buildQuery(order, email) {
+      const q = new URLSearchParams();
+      if (order) q.set("order_id", order);
+      if (email) q.set("email", email);
+      return q.toString();
+    }
 
-    byId("addLink").href  = addUrl;
-    byId("doneLink").href = doneUrl;
+    function update() {
+      const order = orderInput.value.trim();
+      const email = emailInput.value.trim();
+      const qs = buildQuery(order, email);
+      const b = FORM_B_URL + (qs ? ("?" + qs) : "");
+      const c = FORM_C_URL + (qs ? ("?" + qs) : "");
+
+      toB.href = b;
+      toC.href = c;
+      linkB.value = b;
+      linkC.value = c;
+      preview.textContent = "?" + (qs || "order_id=&email=");
+      debug.textContent = JSON.stringify({ order_id: order, email }, null, 2);
+    }
+
+    function initFromURL() {
+      const p = parseQuery();
+      if (p.order_id) orderInput.value = decodeURIComponent(p.order_id);
+      if (p.email)    emailInput.value = decodeURIComponent(p.email);
+    }
+
+    function addCopyHandlers() {
+      document.body.addEventListener("click", (e)=>{
+        const btn = e.target.closest(".copy");
+        if (!btn) return;
+        const sel = btn.dataset.copy;
+        if (sel) {
+          const el = $(sel);
+          el.select(); el.setSelectionRange(0, 99999);
+          document.execCommand("copy");
+          btn.textContent = "Copied!";
+          setTimeout(()=> btn.textContent = "Copy", 1200);
+        } else if (btn.id === "copyQuery") {
+          const q = preview.textContent;
+          navigator.clipboard?.writeText(q).then(()=>{
+            btn.textContent = "Copied!"; setTimeout(()=> btn.textContent="Copy query",1200);
+          });
+        }
+      });
+    }
+
+    initFromURL();
+    update();
+    orderInput.addEventListener("input", update);
+    emailInput.addEventListener("input", update);
+    addCopyHandlers();
   </script>
 </body>
 </html>
