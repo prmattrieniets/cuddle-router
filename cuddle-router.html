@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cuddle Clash – What’s Next?</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+           margin: 0; display: grid; place-items: center; min-height: 100svh;
+           background: radial-gradient(1200px 800px at 50% -20%, #f7f9fc, #e9eef6);
+    }
+    .card { background: rgba(255,255,255,.9); border-radius: 18px; box-shadow: 0 8px 30px rgba(0,0,0,.08);
+            padding: clamp(20px, 3vw, 36px); max-width: 720px; width: min(92vw, 720px); }
+    h1 { margin: 0 0 10px; font-size: clamp(22px, 3.2vw, 34px); }
+    p  { margin: 0 0 18px; line-height: 1.5; }
+    .row { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 14px; }
+    @media (min-width: 560px){ .row { grid-template-columns: 1fr 1fr; } }
+    a.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
+            padding: 14px 18px; border-radius: 12px; font-weight: 700; letter-spacing: .2px;
+            border: 2px solid #111; color: #111; background: #ffd54f; transition: transform .05s ease; }
+    a.btn.secondary { background: #90caf9; }
+    a.btn:hover { transform: translateY(-1px); }
+    .meta { margin-top: 14px; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; opacity: .7; }
+    .warn { color: #b00020; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Great job! What’s next?</h1>
+    <p>We’ll keep your <strong>Order ID</strong> and <strong>Email</strong> attached to the next step automatically.</p>
+
+    <div class="row">
+      <a id="addLink" class="btn" href="#">➕ Add another stuffy</a>
+      <a id="doneLink" class="btn secondary" href="#">✅ I’m done (review & confirm)</a>
+    </div>
+
+    <p class="meta">
+      Order: <span id="oid">—</span> · Email: <span id="eml">—</span>
+      <span id="missing" class="warn" style="display:none"> · Missing parameters — go back and try again.</span>
+    </p>
+  </div>
+
+  <script>
+    // ====== EDIT THESE LINES ======
+    const FORM_A = "3NadXQ"; // optional
+    const FORM_B = "w8XMZx";   // Add-a-Stuffy (yours)
+    const FORM_C = "hmVKxrg";  // Done/Confirm (replace with your Tally Form C ID)
+    // ==============================
+
+    const u = new URL(location.href);
+    const order_id = u.searchParams.get("order_id") || "";
+    const email    = u.searchParams.get("email")    || "";
+
+    const byId = id => document.getElementById(id);
+    byId("oid").textContent = order_id || "—";
+    byId("eml").textContent = email    || "—";
+    if(!order_id || !email){ byId("missing").style.display = "inline"; }
+
+    const qp = (id, em) => `?order_id=${encodeURIComponent(id)}&email=${encodeURIComponent(em)}`;
+    const addUrl  = `https://tally.so/r/${FORM_B}${qp(order_id, email)}`;
+    const doneUrl = `https://tally.so/r/${FORM_C}${qp(order_id, email)}`;
+
+    byId("addLink").href  = addUrl;
+    byId("doneLink").href = doneUrl;
+  </script>
+</body>
+</html>
