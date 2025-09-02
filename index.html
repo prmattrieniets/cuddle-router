@@ -5,13 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Cuddle Clash — Continue</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#f8fafc; --text:#0f172a; --muted:#64748b; --card:#ffffff;
     --brand:#4f46e5; --ok:#16a34a; --shadow:0 12px 30px rgba(2,8,23,.08); --radius:16px;
-    --bar:#e5e7eb; --magic:#8b5cf6; --sky:#22c55e; --earth:#a16207; --water:#06b6d4; --beast:#ef4444;
+    --bar:#e5e7eb;
   }
   *{box-sizing:border-box} html,body{height:100%}
   body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
@@ -28,17 +27,16 @@
   .btn.primary{background:var(--brand);color:#fff;border-color:transparent}
   .btn.ok{background:var(--ok);color:#052e16;border-color:transparent}
   .grid{display:grid;gap:12px;grid-template-columns:1fr 1fr}
-  .kpi{display:grid;gap:6px}
+  .kpi{display:grid;gap:4px}
   .kpi .label{color:var(--muted);font-size:12px}
   .kpi .value{font-weight:800;font-size:22px}
   .bars{display:grid;gap:10px}
   .bar{display:grid;gap:6px}
   .bar .label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
   .bar .track{height:10px;background:var(--bar);border-radius:999px;overflow:hidden}
-  .bar .fill{height:100%;width:0;border-radius:999px;transition:width .4s ease}
-  .magic{background:var(--magic)} .sky{background:var(--sky)} .earth{background:var(--earth)} .water{background:var(--water)} .beast{background:var(--beast)}
+  .bar .fill{height:100%;width:0;border-radius:999px;transition:width .4s ease;background:#4f46e5}
   .foot{color:var(--muted);font-size:12px}
-  .error{background:#fff1f2;color:#be123c;padding:12px 14px;border-radius:12px;font-weight:600}
+  .note{margin-top:10px;color:#6b7280;font-size:13px}
   .hide{display:none}
   @media (max-width:680px){.btns{grid-template-columns:1fr}.grid{grid-template-columns:1fr}}
 </style>
@@ -53,9 +51,7 @@
       <a id="addBtn" class="btn primary" href="#" rel="nofollow">➕ Add a stuffy</a>
       <a id="doneBtn" class="btn ok" href="#" rel="nofollow">✅ I’m done — review my order</a>
     </div>
-    <div id="err" class="error hide" role="alert" style="margin-top:12px">
-      Missing order info. Please return to the previous step and try again.
-    </div>
+    <p id="syncNote" class="note hide">Syncing your latest submission… this can take a moment.</p>
   </section>
 
   <section class="card" id="statsCard" class="hide">
@@ -63,22 +59,21 @@
       <div class="kpi">
         <div class="label">Added so far</div>
         <div id="kpiTotal" class="value">—</div>
-        <div class="foot" id="kpiTarget">Target: —</div>
       </div>
       <div class="kpi">
-        <div class="label">Suggested next</div>
-        <div id="kpiSuggest" class="value">—</div>
-        <div class="foot" id="kpiSuggestNote">Balance Types & Stages</div>
+        <div class="label">Order email</div>
+        <div id="kpiEmail" class="value" style="font-size:16px;word-break:break-all">—</div>
       </div>
     </div>
+
     <div class="grid" style="margin-top:8px">
       <div>
-        <div class="label" style="font-weight:700;margin-bottom:6px">Types</div>
-        <div class="bars" id="typeBars"></div>
+        <div class="label" style="font-weight:700;margin-bottom:6px">Stages (current / target)</div>
+        <div class="bars" id="stageBars"></div>
       </div>
       <div>
-        <div class="label" style="font-weight:700;margin-bottom:6px">Stages</div>
-        <div class="bars" id="stageBars"></div>
+        <div class="label" style="font-weight:700;margin-bottom:6px">Types (current / target)</div>
+        <div class="bars" id="typeBars"></div>
       </div>
     </div>
   </section>
@@ -87,26 +82,31 @@
 </div>
 
 <script>
-  // ========= EDIT THESE =========
-  const FORM_B_URL = "https://tally.so/r/w8XMZx"; // Add-a-Stuffy
-  const FORM_C_URL = "https://tally.so/r/mVKxrg"; // Finish/Confirm
-  const STATS_API  = "https://script.google.com/macros/s/AKfycbzI9Vs_eAy1ESqfCdeRGHS_FkLCf6bgB7YNhy8y6hI/exec";
-  const TARGET_TOTAL = 40; // optional: deck size target
-  // ==============================
+  // ======= EDIT THESE =======
+  const FORM_B_URL = "https://tally.so/r/w8XMZx";
+  const FORM_C_URL = "https://tally.so/r/mVKxrg";
+  const GAS_API    = "https://script.google.com/macros/s/AKfycbzI9Vs_eAy1ESqfCdeRGHS_FkLCf6bgB7YNhy8y6hI/exec";
+  const TARGETS    = { total:40, stages:{Basic:24, EV1:10, EV2:6}, types:{Magic:8, Beast:8, Earth:8, Sky:8, Water:8} };
+  // ==========================
 
-  const params = new URLSearchParams(location.search);
-  const orderId = params.get("order_id") || "";
-  const email   = params.get("email") || "";
+  const qp = new URLSearchParams(location.search);
+  const orderId = qp.get("order_id") || "";
+  const email   = qp.get("email") || "";
+  const just    = qp.get("just") === "1"; // coming straight from a submission
 
-  const addBtn = document.getElementById("addBtn");
-  const doneBtn = document.getElementById("doneBtn");
-  const err = document.getElementById("err");
-  const chip = document.getElementById("orderChip");
-  const orderText = document.getElementById("orderText");
-  const statsCard = document.getElementById("statsCard");
+  const addBtn   = document.getElementById("addBtn");
+  const doneBtn  = document.getElementById("doneBtn");
+  const syncNote = document.getElementById("syncNote");
+  const chip     = document.getElementById("orderChip");
+  const orderTxt = document.getElementById("orderText");
+  const stats    = document.getElementById("statsCard");
+  const kpiTotal = document.getElementById("kpiTotal");
+  const kpiEmail = document.getElementById("kpiEmail");
+
+  const LS_KEY = (id)=> `cc_last_total_${id}`;
 
   function link(base){
-    const q = new URLSearchParams({order_id:orderId,email:email});
+    const q = new URLSearchParams({order_id:orderId, email:email});
     return base + "?" + q.toString();
   }
 
@@ -114,65 +114,90 @@
   if (hasParams){
     addBtn.href = link(FORM_B_URL);
     doneBtn.href = link(FORM_C_URL);
-    orderText.textContent = orderId;
+    orderTxt.textContent = orderId;
+    kpiEmail.textContent = email;
     chip.classList.remove("hide");
-    fetchStats().catch(()=>{ /* keep quiet for users */ });
+    init();
   } else {
     addBtn.removeAttribute("href");
     doneBtn.removeAttribute("href");
-    err.classList.remove("hide");
   }
 
-  async function fetchStats(){
-    const url = STATS_API + "?order_id=" + encodeURIComponent(orderId) + "&target=" + encodeURIComponent(TARGET_TOTAL);
-    const res = await fetch(url, {method:"GET", credentials:"omit"});
-    if (!res.ok) return;
-    const data = await res.json();
-    renderStats(data);
+  async function init(){
+    // Base read (what we already have)
+    const lastStored = Number(localStorage.getItem(LS_KEY(orderId)) || "0");
+
+    if (just){
+      // We expect the count to increase, so poll with backoff
+      syncNote.classList.remove("hide");
+      const data = await pollForIncrease(lastStored, 8); // ~ up to a few seconds
+      render(data);
+      syncNote.classList.add("hide");
+    } else {
+      // No fresh submission — just read once
+      const data = await fetchCounts();
+      render(data);
+    }
   }
 
-  function renderStats(d){
-    if (!d || !d.counts) return;
-    statsCard.classList.remove("hide");
+  async function fetchCounts(){
+    try{
+      const url = `${GAS_API}?fn=getCounts&order_id=${encodeURIComponent(orderId)}&email=${encodeURIComponent(email)}`;
+      const res = await fetch(url, {cache:"no-store"});
+      if(!res.ok) return null;
+      return await res.json();
+    }catch(e){ return null; }
+  }
+
+  async function pollForIncrease(baseTotal, maxTries){
+    let tries = 0, delay = 350, latest = null;
+    while (tries < maxTries){
+      latest = await fetchCounts();
+      const total = Number(latest?.totals?.total || 0);
+      if (total > baseTotal) {
+        localStorage.setItem(LS_KEY(orderId), String(total));
+        return latest;
+      }
+      await new Promise(r => setTimeout(r, delay));
+      delay = Math.min(2000, Math.round(delay * 1.7)); // exponential-ish backoff
+      tries++;
+    }
+    // Even if it didn’t increase yet, render whatever we have
+    localStorage.setItem(LS_KEY(orderId), String(latest?.totals?.total || baseTotal));
+    return latest;
+  }
+
+  function render(d){
+    if (!d || !d.ok) return;
+    stats.classList.remove("hide");
+
+    const totals = d.totals || {};
+    const types  = totals.types  || {};
+    const stages = totals.stages || {};
 
     // KPIs
-    document.getElementById("kpiTotal").textContent = d.total_items ?? "—";
-    document.getElementById("kpiTarget").textContent = "Target: " + (d.targets?.total ?? "—");
-
-    const typeNext = d.suggest?.typeNext || null;
-    const stageNext = d.suggest?.stageNext || null;
-    document.getElementById("kpiSuggest").textContent =
-      (stageNext || typeNext) ? [stageNext, typeNext].filter(Boolean).join(" • ") : "Anything you like";
+    kpiTotal.textContent = totals.total ?? "—";
 
     // Bars
-    renderBars("typeBars", d.counts.types, d.targets?.types, {
-      Magic:"magic", Beast:"beast", Earth:"earth", Sky:"sky", Water:"water"
-    });
-    renderBars("stageBars", d.counts.stages, d.targets?.stages, {
-      Basic:"magic", EV1:"sky", EV2:"earth", Unassigned:"water"
-    });
+    renderBars("stageBars", stages, TARGETS.stages);
+    renderBars("typeBars",  types,  TARGETS.types);
   }
 
-  function renderBars(containerId, counts, targets, classes){
+  function renderBars(containerId, counts, targets){
     const wrap = document.getElementById(containerId);
     wrap.innerHTML = "";
-    const keys = Object.keys(targets || counts || {});
-    keys.forEach(k=>{
-      const have = (counts && counts[k] != null) ? counts[k] : 0;
-      const targ = (targets && targets[k] != null) ? targets[k] : 0;
+    Object.keys(targets).forEach(k=>{
+      const have = Number(counts?.[k] || 0);
+      const targ = Number(targets?.[k] || 0);
       const pct  = targ ? Math.min(100, Math.round((have / targ) * 100)) : 0;
-      const row = document.createElement("div");
+      const row  = document.createElement("div");
       row.className = "bar";
       row.innerHTML = `
-        <div class="label"><span>${escapeHtml(k)}</span><span>${have}/${targ || 0}</span></div>
-        <div class="track"><div class="fill ${classes[k]||""}" style="width:${pct}%"></div></div>
+        <div class="label"><span>${k}</span><span>${have}/${targ}</span></div>
+        <div class="track"><div class="fill" style="width:${pct}%"></div></div>
       `;
       wrap.appendChild(row);
     });
-  }
-
-  function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
 </script>
 </body>
