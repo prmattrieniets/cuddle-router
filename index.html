@@ -6,6 +6,7 @@
 <title>Cuddle Clash — Continue</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:,">
 <style>
   :root{--bg:#f8fafc;--text:#0f172a;--muted:#64748b;--card:#fff;--shadow:0 12px 30px rgba(2,8,23,.08);--radius:16px}
   *{box-sizing:border-box}
@@ -106,18 +107,19 @@
   </section>
 </div>
 
-<script>
+
+<script defer>
+(() => {
+  "use strict";
+
   /* ====== EDIT THESE ====== */
   const FORM_B_URL = "https://tally.so/r/w8XMZx";   // Add a stuffy
   const FORM_C_URL = "https://tally.so/r/mVKxrg";   // I'm done
-  const GAS_API    = "https://script.google.com/macros/s/AKfycbz7H4T8FI3o4A4f-lEZrBvHeqkBZXLFKwCCHc_BU10dQALYu5CZchsRkC_FOtW7wE0d/exec"; // Apps Script /exec
-
-// Choose at runtime; remember the last working base
-const LS_GAS_BASE = "cc_gas_base";
-let GAS_API = localStorage.getItem(LS_GAS_BASE) || GAS_API_EXEC;
+  const GAS_API    = "https://script.google.com/macros/s/AKfycbz7H4T8FI3o4A4f-lEZrBvHeqkBZXLFKwCCHc_BU10dQALYu5CZchsRkC_FOtW7wE0d/exec";
   const TARGETS    = { total:40, stages:{Basic:24, EV1:10, EV2:6}, types:{Magic:8, Beast:8, Earth:8, Sky:8, Water:8} };
   /* ======================== */
 
+  // URL params
   const qp = new URLSearchParams(location.search);
   const orderId = qp.get("order_id") || "";
   const email   = qp.get("email") || "";
@@ -132,18 +134,24 @@ let GAS_API = localStorage.getItem(LS_GAS_BASE) || GAS_API_EXEC;
   const stats    = document.getElementById("statsCard");
   const kpiTotal = document.getElementById("kpiTotal");
   const kpiEmail = document.getElementById("kpiEmail");
+
   const resumeCard   = document.getElementById("resumeCard");
   const lastOrderRow = document.getElementById("lastOrderRow");
   const resumeLastBtn= document.getElementById("resumeLastBtn");
   const lookupOrder  = document.getElementById("lookupOrder");
   const lookupEmail  = document.getElementById("lookupEmail");
   const lookupGo     = document.getElementById("lookupGo");
+
   const saveRow      = document.getElementById("saveRow");
   const resumeUrl    = document.getElementById("resumeUrl");
   const copyLinkBtn  = document.getElementById("copyLink");
 
+  const listCard  = document.getElementById("listCard");
+  const itemsList = document.getElementById("itemsList");
+
   const LS_LAST = "cc_last_order"; // stores {orderId,email}
 
+  // Helpers
   function buildRouterUrl(oid, em){
     const q = new URLSearchParams({ order_id: oid || "", email: em || "" });
     return location.origin + location.pathname + "?" + q.toString();
@@ -152,7 +160,6 @@ let GAS_API = localStorage.getItem(LS_GAS_BASE) || GAS_API_EXEC;
     const q = new URLSearchParams({ order_id: orderId, email: email });
     return base + "?" + q.toString();
   }
-
   // JSONP loader (to avoid CORS)
   function jsonp(url){
     return new Promise((resolve, reject)=>{
@@ -166,58 +173,62 @@ let GAS_API = localStorage.getItem(LS_GAS_BASE) || GAS_API_EXEC;
     });
   }
 
-  // If missing params, show resume UI
-  if (!orderId || !email){
-    resumeCard.classList.remove("hide");
-    try{
+  // Entry
+  if (!orderId){
+    // No params: show resume/lookup UI
+    resumeCard?.classList?.remove("hide");
+    try {
       const saved = JSON.parse(localStorage.getItem(LS_LAST) || "null");
-      if (saved && saved.orderId){
+      if (saved?.orderId && lastOrderRow && resumeLastBtn){
         lastOrderRow.classList.remove("hide");
         resumeLastBtn.href = buildRouterUrl(saved.orderId, saved.email || "");
       }
-    }catch(_){}
-    lookupGo.addEventListener("click",(e)=>{
+    } catch {}
+    lookupGo?.addEventListener("click",(e)=>{
       e.preventDefault();
-      const oid = (lookupOrder.value||"").trim();
-      const em  = (lookupEmail.value||"").trim();
-      if (!oid){ lookupOrder.focus(); return; }
+      const oid = (lookupOrder?.value || "").trim();
+      const em  = (lookupEmail?.value || "").trim();
+      if (!oid){ lookupOrder?.focus(); return; }
       location.href = buildRouterUrl(oid, em);
     });
-  } else {
-    // Normal flow
-    orderTxt.textContent = orderId;
-    kpiEmail.textContent = email;
-    chip.classList.remove("hide");
-    addBtn.href  = link(FORM_B_URL);
-    doneBtn.href = link(FORM_C_URL);
-
-    // Show and populate save link row
-    const myLink = buildRouterUrl(orderId, email);
-    saveRow.classList.remove("hide");
-    resumeUrl.value = myLink;
-    copyLinkBtn.addEventListener("click", async (e)=>{
-      e.preventDefault();
-      try { await navigator.clipboard.writeText(myLink); copyLinkBtn.textContent = "✅ Copied"; }
-      catch {
-        resumeUrl.select(); document.execCommand('copy');
-        copyLinkBtn.textContent = "✅ Copied";
-      }
-      setTimeout(()=> copyLinkBtn.textContent = "📋 Copy", 1300);
-    });
-
-    // Remember last order locally
-    try { localStorage.setItem(LS_LAST, JSON.stringify({orderId, email})); } catch(_){}
-
-    init();
+    return; // stop here if no order
   }
+
+  // Params present: wire buttons and show save-link immediately
+  orderTxt && (orderTxt.textContent = orderId);
+  kpiEmail && (kpiEmail.textContent = email || "—");
+  chip?.classList?.remove("hide");
+
+  addBtn && (addBtn.href  = link(FORM_B_URL));
+  doneBtn && (doneBtn.href = link(FORM_C_URL));
+
+  // Save/resume link
+  const myLink = buildRouterUrl(orderId, email);
+  saveRow?.classList?.remove("hide");
+  if (resumeUrl) resumeUrl.value = myLink;
+  copyLinkBtn?.addEventListener("click", async (e)=>{
+    e.preventDefault();
+    try { await navigator.clipboard.writeText(myLink); copyLinkBtn.textContent = "✅ Copied"; }
+    catch {
+      resumeUrl?.select?.(); document.execCommand?.('copy');
+      copyLinkBtn.textContent = "✅ Copied";
+    }
+    setTimeout(()=> copyLinkBtn.textContent = "📋 Copy", 1300);
+  });
+
+  // Remember last order locally
+  try { localStorage.setItem(LS_LAST, JSON.stringify({orderId, email})); } catch {}
+
+  // Fetch + render data
+  init();
 
   async function init(){
     const baseTotal = Number(localStorage.getItem("cc_last_total_"+orderId) || "0");
     if (just){
-      syncNote.classList.remove("hide");
+      syncNote?.classList?.remove("hide");
       const d1 = await pollForIncrease(baseTotal, 8); renderCounts(d1);
       const d2 = await fetchItems();                 renderItems(d2);
-      syncNote.classList.add("hide");
+      syncNote?.classList?.add("hide");
     } else {
       const d1 = await fetchCounts(); renderCounts(d1);
       const d2 = await fetchItems();  renderItems(d2);
@@ -238,7 +249,7 @@ let GAS_API = localStorage.getItem(LS_GAS_BASE) || GAS_API_EXEC;
       latest = await fetchCounts();
       const total = Number(latest?.totals?.total || 0);
       if (total > baseTotal){
-        localStorage.setItem("cc_last_total_"+orderId, String(total));
+        try { localStorage.setItem("cc_last_total_"+orderId, String(total)); } catch {}
         return latest;
       }
       await new Promise(r=>setTimeout(r,delay));
@@ -250,9 +261,9 @@ let GAS_API = localStorage.getItem(LS_GAS_BASE) || GAS_API_EXEC;
 
   function renderCounts(d){
     if (!d || !d.ok) return;
-    stats.classList.remove("hide");
+    stats?.classList?.remove("hide");
     const t=d.totals||{}, ty=t.types||{}, st=t.stages||{};
-    kpiTotal.textContent = t.total ?? "—";
+    kpiTotal && (kpiTotal.textContent = t.total ?? "—");
     set("sBasic", fmt(st.Basic, 24));
     set("sEV1",   fmt(st.EV1,   10));
     set("sEV2",   fmt(st.EV2,    6));
@@ -264,11 +275,14 @@ let GAS_API = localStorage.getItem(LS_GAS_BASE) || GAS_API_EXEC;
   }
 
   function renderItems(d){
-    const listCard = document.getElementById("listCard");
-    const itemsList= document.getElementById("itemsList");
     if (!listCard || !itemsList) return;
     itemsList.innerHTML = "";
-    if (!d || !d.ok || !Array.isArray(d.items) || d.items.length===0){
+    if (!d){
+      listCard.classList.remove("hide");
+      itemsList.innerHTML = '<div class="item"><strong>Can’t reach order data</strong><small>Please refresh or try again.</small></div>';
+      return;
+    }
+    if (!d.ok || !Array.isArray(d.items) || d.items.length===0){
       listCard.classList.remove("hide");
       itemsList.innerHTML = '<div class="item"><strong>No stuffies yet</strong><small>Add one to get started</small></div>';
       return;
@@ -287,6 +301,7 @@ let GAS_API = localStorage.getItem(LS_GAS_BASE) || GAS_API_EXEC;
   function set(id,v){ const el=document.getElementById(id); if(el) el.textContent=(v==null?'—':v); }
   function fmt(cur,tgt){ const a=Number(cur||0); const b=Number(tgt||0); return `${a} / ${b}`; }
   function escapeHtml(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-</script>
+
+})();</script>
 </body>
 </html>
