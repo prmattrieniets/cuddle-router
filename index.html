@@ -1,4 +1,4 @@
-<!doctype html>
+  <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -7,38 +7,21 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#f8fafc; --text:#0f172a; --muted:#64748b; --card:#ffffff;
-    --brand:#4f46e5; --ok:#16a34a; --shadow:0 12px 30px rgba(2,8,23,.08); --radius:16px;
-    --bar:#e5e7eb;
-  }
-  *{box-sizing:border-box} html,body{height:100%}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-       display:grid;place-items:center;padding:28px}
-  .wrap{width:100%;max-width:740px;display:grid;gap:16px}
-  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
-  h1{margin:0 0 6px;font-size:clamp(22px,3.6vw,28px)}
-  .sub{margin:0 0 14px;color:var(--muted);font-size:14px}
+  :root{--bg:#f8fafc;--text:#0f172a;--muted:#64748b;--card:#fff;--shadow:0 12px 30px rgba(2,8,23,.08);--radius:16px}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+  .wrap{max-width:740px;margin:32px auto;padding:0 16px}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;margin-bottom:14px}
+  h1{margin:0 0 6px;font-size:28px} .sub{margin:0 0 14px;color:var(--muted);font-size:14px}
   .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:#eef2ff;color:#3730a3;font-weight:600;font-size:12px}
-  .btns{display:grid;gap:12px;grid-template-columns:1fr 1fr}
-  .btn{display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;padding:14px;border-radius:12px;
-       font-weight:700;border:1px solid #e5e7eb;background:#fff;color:#111827;box-shadow:var(--shadow);transition:transform .06s ease}
-  .btn:hover{transform:translateY(-1px)}
-  .btn.primary{background:var(--brand);color:#fff;border-color:transparent}
-  .btn.ok{background:var(--ok);color:#052e16;border-color:transparent}
-  .grid{display:grid;gap:12px;grid-template-columns:1fr 1fr}
-  .kpi{display:grid;gap:4px}
-  .kpi .label{color:var(--muted);font-size:12px}
-  .kpi .value{font-weight:800;font-size:22px}
-  .bars{display:grid;gap:10px}
-  .bar{display:grid;gap:6px}
-  .bar .label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
-  .bar .track{height:10px;background:var(--bar);border-radius:999px;overflow:hidden}
-  .bar .fill{height:100%;width:0;border-radius:999px;transition:width .4s ease;background:#4f46e5}
-  .foot{color:var(--muted);font-size:12px}
-  .note{margin-top:10px;color:#6b7280;font-size:13px}
+  .row{display:grid;gap:12px;grid-template-columns:1fr 1fr;margin-top:14px}
+  .btn{display:flex;align-items:center;justify-content:center;text-decoration:none;padding:14px;border-radius:12px;font-weight:700;border:1px solid #e5e7eb;box-shadow:var(--shadow);color:#111827}
+  .primary{background:#4f46e5;color:#fff;border-color:transparent} .ok{background:#16a34a;color:#052e16;border-color:transparent}
+  .kpi{display:grid;gap:4px;margin-top:6px} .kpi .label{color:var(--muted);font-size:12px} .kpi .value{font-weight:800;font-size:22px}
+  .mini{display:grid;gap:6px;margin-top:14px}
+  .stat{display:flex;justify-content:space-between;color:var(--muted)}
+  #dbg{white-space:pre-wrap;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px;margin-top:12px;font:12px/1.4 ui-monospace,Consolas,Menlo,monospace;color:#7c2d12}
   .hide{display:none}
-  @media (max-width:680px){.btns{grid-template-columns:1fr}.grid{grid-template-columns:1fr}}
+  @media (max-width:700px){.row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -47,63 +30,49 @@
     <h1>Great! What’s next?</h1>
     <p class="sub">Choose an option below to continue.</p>
     <div id="orderChip" class="pill hide">Order&nbsp;<span id="orderText"></span></div>
-    <div class="btns" style="margin-top:14px">
-      <a id="addBtn" class="btn primary" href="#" rel="nofollow">➕ Add a stuffy</a>
-      <a id="doneBtn" class="btn ok" href="#" rel="nofollow">✅ I’m done — review my order</a>
+    <div class="row">
+      <a id="addBtn" class="btn primary" href="#">＋ Add a stuffy</a>
+      <a id="doneBtn" class="btn ok" href="#">✅ I’m done — review my order</a>
     </div>
-    <p id="syncNote" class="note hide">Syncing your latest submission… this can take a moment.</p>
+    <p id="syncNote" class="sub hide">Syncing your latest submission… this can take a moment.</p>
   </section>
 
-  <section class="card" id="statsCard" class="hide">
-    <div class="grid">
-      <div class="kpi">
-        <div class="label">Added so far</div>
-        <div id="kpiTotal" class="value">—</div>
-      </div>
-      <div class="kpi">
-        <div class="label">Order email</div>
-        <div id="kpiEmail" class="value" style="font-size:16px;word-break:break-all">—</div>
-      </div>
+  <section id="statsCard" class="card hide">
+    <div class="kpi"><div class="label">Order email</div><div id="kpiEmail" class="value">—</div></div>
+    <div class="kpi"><div class="label">Added so far</div><div id="kpiTotal" class="value">—</div></div>
+
+    <div class="mini">
+      <h3 style="margin:8px 0 2px">Stages (current / target)</h3>
+      <div class="stat"><span>Basic</span><span id="sBasic">—</span></div>
+      <div class="stat"><span>EV1</span><span id="sEV1">—</span></div>
+      <div class="stat"><span>EV2</span><span id="sEV2">—</span></div>
     </div>
 
-    <div class="grid" style="margin-top:8px">
-      <div>
-        <div class="label" style="font-weight:700;margin-bottom:6px">Stages (current / target)</div>
-        <div class="bars" id="stageBars"></div>
-      </div>
-      <div>
-        <div class="label" style="font-weight:700;margin-bottom:6px">Types (current / target)</div>
-        <div class="bars" id="typeBars"></div>
-      </div>
+    <div class="mini">
+      <h3 style="margin:8px 0 2px">Types (current / target)</h3>
+      <div class="stat"><span>Magic</span><span id="tMagic">—</span></div>
+      <div class="stat"><span>Beast</span><span id="tBeast">—</span></div>
+      <div class="stat"><span>Earth</span><span id="tEarth">—</span></div>
+      <div class="stat"><span>Sky</span><span id="tSky">—</span></div>
+      <div class="stat"><span>Water</span><span id="tWater">—</span></div>
     </div>
   </section>
 
-  <p class="foot">We’ll carry your order details forward automatically.</p>
+  <pre id="dbg" class="hide"></pre>
 </div>
 
 <script>
   // ======= EDIT THESE =======
   const FORM_B_URL = "https://tally.so/r/w8XMZx";
   const FORM_C_URL = "https://tally.so/r/mVKxrg";
-  const GAS_API    = "https://script.google.com/macros/s/AKfycbzI9Vs_eAy1ESqfCdeRGHS_FkLCf6bgB7YNhy8y6hI/exec";
-  <!-- DEBUG PANEL (remove later) -->
-<style>#dbg{white-space:pre-wrap;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px;margin-top:12px;font-size:12px;color:#7c2d12}</style>
-<div id="dbg" hidden></div>
-<script>
-  const DBG = document.getElementById('dbg');
-  function dbg(msg){
-    DBG.hidden = false;
-    DBG.textContent += (typeof msg === 'string' ? msg : JSON.stringify(msg,null,2)) + "\n";
-  }
-</script>
-
+  const GAS_API    = "https://script.google.com/macros/s/AKfycbxsfCL76QegycNCeFvUOsdwA7xucUnQ_tSqFWdYAAw45ndB1tFNorD1GKa3EXrOjQqk/exec"; // /exec
   const TARGETS    = { total:40, stages:{Basic:24, EV1:10, EV2:6}, types:{Magic:8, Beast:8, Earth:8, Sky:8, Water:8} };
   // ==========================
 
   const qp = new URLSearchParams(location.search);
   const orderId = qp.get("order_id") || "";
   const email   = qp.get("email") || "";
-  const just    = qp.get("just") === "1"; // coming straight from a submission
+  const just    = qp.get("just") === "1";
 
   const addBtn   = document.getElementById("addBtn");
   const doneBtn  = document.getElementById("doneBtn");
@@ -113,44 +82,19 @@
   const stats    = document.getElementById("statsCard");
   const kpiTotal = document.getElementById("kpiTotal");
   const kpiEmail = document.getElementById("kpiEmail");
+  const dbgEl    = document.getElementById("dbg");
 
-  const LS_KEY = (id)=> `cc_last_total_${id}`;
+  function dbg(msg){
+    dbgEl.classList.remove("hide");
+    dbgEl.textContent += (typeof msg === 'string' ? msg : JSON.stringify(msg,null,2)) + "\n";
+  }
 
   function link(base){
     const q = new URLSearchParams({order_id:orderId, email:email});
     return base + "?" + q.toString();
   }
 
-  const hasParams = !!(orderId && email);
-  if (hasParams){
-    addBtn.href = link(FORM_B_URL);
-    doneBtn.href = link(FORM_C_URL);
-    orderTxt.textContent = orderId;
-    kpiEmail.textContent = email;
-    chip.classList.remove("hide");
-    init();
-  } else {
-    addBtn.removeAttribute("href");
-    doneBtn.removeAttribute("href");
-  }
-
-  async function init(){
-    // Base read (what we already have)
-    const lastStored = Number(localStorage.getItem(LS_KEY(orderId)) || "0");
-
-    if (just){
-      // We expect the count to increase, so poll with backoff
-      syncNote.classList.remove("hide");
-      const data = await pollForIncrease(lastStored, 8); // ~ up to a few seconds
-      render(data);
-      syncNote.classList.add("hide");
-    } else {
-      // No fresh submission — just read once
-      const data = await fetchCounts();
-      render(data);
-    }
-  }
-
+  // --- JSONP loader to avoid CORS ---
   function jsonp(url) {
     return new Promise((resolve, reject) => {
       const cb = 'cc_cb_' + Math.random().toString(36).slice(2);
@@ -164,13 +108,44 @@
     });
   }
 
-  async function fetchCounts(){
-    const url = `${GAS_API}?fn=getCounts&order_id=${encodeURIComponent(orderId)}${email ? `&email=${encodeURIComponent(email)}` : ''}`;
-    // Optional: simple debug log on screen if you kept the dbg() panel
-    if (typeof dbg === 'function') dbg('JSONP ' + url);
-    return await jsonp(url);
+  if (orderId && email){
+    orderTxt.textContent = orderId;
+    kpiEmail.textContent = email;
+    chip.classList.remove("hide");
+    addBtn.href  = link(FORM_B_URL);
+    doneBtn.href = link(FORM_C_URL);
+    init();
+  } else {
+    addBtn.removeAttribute("href");
+    doneBtn.removeAttribute("href");
+    dbg("Missing order_id or email in the URL.");
   }
-}
+
+  async function init(){
+    const baseTotal = Number(localStorage.getItem("cc_last_total_"+orderId) || "0");
+    if (just){
+      syncNote.classList.remove("hide");
+      const data = await pollForIncrease(baseTotal, 8);
+      render(data);
+      syncNote.classList.add("hide");
+    } else {
+      const data = await fetchCounts();
+      render(data);
+    }
+  }
+
+  async function fetchCounts(){
+    const url = `${GAS_API}?fn=getCounts&order_id=${encodeURIComponent(orderId)}${email?`&email=${encodeURIComponent(email)}`:''}`;
+    dbg("JSONP " + url);
+    try{
+      const data = await jsonp(url);
+      dbg({status:"ok", body:data});
+      return data;
+    }catch(e){
+      dbg("JSONP error: " + e.message);
+      return null;
+    }
+  }
 
   async function pollForIncrease(baseTotal, maxTries){
     let tries = 0, delay = 350, latest = null;
@@ -178,50 +153,27 @@
       latest = await fetchCounts();
       const total = Number(latest?.totals?.total || 0);
       if (total > baseTotal) {
-        localStorage.setItem(LS_KEY(orderId), String(total));
+        localStorage.setItem("cc_last_total_"+orderId, String(total));
         return latest;
       }
       await new Promise(r => setTimeout(r, delay));
-      delay = Math.min(2000, Math.round(delay * 1.7)); // exponential-ish backoff
+      delay = Math.min(2000, Math.round(delay * 1.7));
       tries++;
     }
-    // Even if it didn’t increase yet, render whatever we have
-    localStorage.setItem(LS_KEY(orderId), String(latest?.totals?.total || baseTotal));
     return latest;
   }
 
   function render(d){
-    if (!d || !d.ok) return;
+    if (!d || !d.ok){ dbg("No data to render."); return; }
     stats.classList.remove("hide");
-
-    const totals = d.totals || {};
-    const types  = totals.types  || {};
-    const stages = totals.stages || {};
-
-    // KPIs
-    kpiTotal.textContent = totals.total ?? "—";
-
-    // Bars
-    renderBars("stageBars", stages, TARGETS.stages);
-    renderBars("typeBars",  types,  TARGETS.types);
+    const t  = d.totals || {};
+    const ty = t.types  || {};
+    const st = t.stages || {};
+    kpiTotal.textContent = t.total ?? "—";
+    set("sBasic", st.Basic); set("sEV1", st.EV1); set("sEV2", st.EV2);
+    set("tMagic", ty.Magic); set("tBeast", ty.Beast); set("tEarth", ty.Earth); set("tSky", ty.Sky); set("tWater", ty.Water);
   }
-
-  function renderBars(containerId, counts, targets){
-    const wrap = document.getElementById(containerId);
-    wrap.innerHTML = "";
-    Object.keys(targets).forEach(k=>{
-      const have = Number(counts?.[k] || 0);
-      const targ = Number(targets?.[k] || 0);
-      const pct  = targ ? Math.min(100, Math.round((have / targ) * 100)) : 0;
-      const row  = document.createElement("div");
-      row.className = "bar";
-      row.innerHTML = `
-        <div class="label"><span>${k}</span><span>${have}/${targ}</span></div>
-        <div class="track"><div class="fill" style="width:${pct}%"></div></div>
-      `;
-      wrap.appendChild(row);
-    });
-  }
+  function set(id, v){ const el = document.getElementById(id); if (el) el.textContent = (v==null?'—':v); }
 </script>
 </body>
 </html>
