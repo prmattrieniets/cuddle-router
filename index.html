@@ -1,4 +1,4 @@
-  <!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -8,18 +8,25 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{--bg:#f8fafc;--text:#0f172a;--muted:#64748b;--card:#fff;--shadow:0 12px 30px rgba(2,8,23,.08);--radius:16px}
-  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
   .wrap{max-width:740px;margin:32px auto;padding:0 16px}
   .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;margin-bottom:14px}
-  h1{margin:0 0 6px;font-size:28px} .sub{margin:0 0 14px;color:var(--muted);font-size:14px}
+  h1{margin:0 0 6px;font-size:28px}
+  .sub{margin:0 0 14px;color:var(--muted);font-size:14px}
   .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:#eef2ff;color:#3730a3;font-weight:600;font-size:12px}
   .row{display:grid;gap:12px;grid-template-columns:1fr 1fr;margin-top:14px}
   .btn{display:flex;align-items:center;justify-content:center;text-decoration:none;padding:14px;border-radius:12px;font-weight:700;border:1px solid #e5e7eb;box-shadow:var(--shadow);color:#111827}
-  .primary{background:#4f46e5;color:#fff;border-color:transparent} .ok{background:#16a34a;color:#052e16;border-color:transparent}
-  .kpi{display:grid;gap:4px;margin-top:6px} .kpi .label{color:var(--muted);font-size:12px} .kpi .value{font-weight:800;font-size:22px}
+  .primary{background:#4f46e5;color:#fff;border-color:transparent}
+  .ok{background:#16a34a;color:#052e16;border-color:transparent}
+  .kpi{display:grid;gap:4px;margin-top:6px}
+  .kpi .label{color:var(--muted);font-size:12px}
+  .kpi .value{font-weight:800;font-size:22px}
   .mini{display:grid;gap:6px;margin-top:14px}
   .stat{display:flex;justify-content:space-between;color:var(--muted)}
-  #dbg{white-space:pre-wrap;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px;margin-top:12px;font:12px/1.4 ui-monospace,Consolas,Menlo,monospace;color:#7c2d12}
+  .list{display:grid;gap:8px}
+  .item{display:flex;justify-content:space-between;align-items:center;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px;background:#fff}
+  .item small{color:#64748b}
   .hide{display:none}
   @media (max-width:700px){.row{grid-template-columns:1fr}}
 </style>
@@ -58,7 +65,10 @@
     </div>
   </section>
 
-  <pre id="dbg" class="hide"></pre>
+  <section id="listCard" class="card hide">
+    <h3 style="margin:8px 0 12px">Your submissions</h3>
+    <div id="itemsList" class="list"></div>
+  </section>
 </div>
 
 <script>
@@ -82,17 +92,8 @@
   const stats    = document.getElementById("statsCard");
   const kpiTotal = document.getElementById("kpiTotal");
   const kpiEmail = document.getElementById("kpiEmail");
-  const dbgEl    = document.getElementById("dbg");
-
-  function dbg(msg){
-    dbgEl.classList.remove("hide");
-    dbgEl.textContent += (typeof msg === 'string' ? msg : JSON.stringify(msg,null,2)) + "\n";
-  }
-
-  function link(base){
-    const q = new URLSearchParams({order_id:orderId, email:email});
-    return base + "?" + q.toString();
-  }
+  const listCard = document.getElementById("listCard");
+  const itemsList= document.getElementById("itemsList");
 
   // --- JSONP loader to avoid CORS ---
   function jsonp(url) {
@@ -108,6 +109,11 @@
     });
   }
 
+  function link(base){
+    const q = new URLSearchParams({order_id:orderId, email:email});
+    return base + "?" + q.toString();
+  }
+
   if (orderId && email){
     orderTxt.textContent = orderId;
     kpiEmail.textContent = email;
@@ -118,33 +124,33 @@
   } else {
     addBtn.removeAttribute("href");
     doneBtn.removeAttribute("href");
-    dbg("Missing order_id or email in the URL.");
   }
 
   async function init(){
     const baseTotal = Number(localStorage.getItem("cc_last_total_"+orderId) || "0");
     if (just){
       syncNote.classList.remove("hide");
-      const data = await pollForIncrease(baseTotal, 8);
-      render(data);
+      const d1 = await pollForIncrease(baseTotal, 8);
+      renderCounts(d1);
+      const d2 = await fetchItems();
+      renderItems(d2);
       syncNote.classList.add("hide");
     } else {
-      const data = await fetchCounts();
-      render(data);
+      const d1 = await fetchCounts();
+      renderCounts(d1);
+      const d2 = await fetchItems();
+      renderItems(d2);
     }
   }
 
   async function fetchCounts(){
     const url = `${GAS_API}?fn=getCounts&order_id=${encodeURIComponent(orderId)}${email?`&email=${encodeURIComponent(email)}`:''}`;
-    dbg("JSONP " + url);
-    try{
-      const data = await jsonp(url);
-      dbg({status:"ok", body:data});
-      return data;
-    }catch(e){
-      dbg("JSONP error: " + e.message);
-      return null;
-    }
+    try{ return await jsonp(url); }catch{ return null; }
+  }
+
+  async function fetchItems(){
+    const url = `${GAS_API}?fn=getItems&order_id=${encodeURIComponent(orderId)}${email?`&email=${encodeURIComponent(email)}`:''}`;
+    try{ return await jsonp(url); }catch{ return null; }
   }
 
   async function pollForIncrease(baseTotal, maxTries){
@@ -163,17 +169,47 @@
     return latest;
   }
 
-  function render(d){
-    if (!d || !d.ok){ dbg("No data to render."); return; }
+  function renderCounts(d){
+    if (!d || !d.ok) return;
     stats.classList.remove("hide");
     const t  = d.totals || {};
     const ty = t.types  || {};
     const st = t.stages || {};
     kpiTotal.textContent = t.total ?? "—";
-    set("sBasic", st.Basic); set("sEV1", st.EV1); set("sEV2", st.EV2);
-    set("tMagic", ty.Magic); set("tBeast", ty.Beast); set("tEarth", ty.Earth); set("tSky", ty.Sky); set("tWater", ty.Water);
+    set("sBasic", fmt(st.Basic, TARGETS.stages.Basic));
+    set("sEV1",   fmt(st.EV1,   TARGETS.stages.EV1));
+    set("sEV2",   fmt(st.EV2,   TARGETS.stages.EV2));
+    set("tMagic", fmt(ty.Magic, TARGETS.types.Magic));
+    set("tBeast", fmt(ty.Beast, TARGETS.types.Beast));
+    set("tEarth", fmt(ty.Earth, TARGETS.types.Earth));
+    set("tSky",   fmt(ty.Sky,   TARGETS.types.Sky));
+    set("tWater", fmt(ty.Water, TARGETS.types.Water));
   }
+
+  function renderItems(d){
+    if (!d || !d.ok) return;
+    itemsList.innerHTML = '';
+    const arr = d.items || [];
+    if (arr.length === 0){
+      listCard.classList.remove("hide");
+      itemsList.innerHTML = '<div class="item"><strong>No stuffies yet</strong><small>Add one to get started</small></div>';
+      return;
+    }
+    arr.forEach(it=>{
+      const div = document.createElement('div');
+      div.className = 'item';
+      const name  = it.name  || '—';
+      const stage = it.stage || '—';
+      const type  = it.type  || '—';
+      div.innerHTML = `<strong>${escapeHtml(name)}</strong><small>${escapeHtml(stage)} · ${escapeHtml(type)}</small>`;
+      itemsList.appendChild(div);
+    });
+    listCard.classList.remove("hide");
+  }
+
   function set(id, v){ const el = document.getElementById(id); if (el) el.textContent = (v==null?'—':v); }
+  function fmt(cur, tgt){ const a = Number(cur||0); const b = Number(tgt||0); return `${a} / ${b}`; }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 </script>
 </body>
 </html>
