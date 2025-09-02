@@ -16,7 +16,7 @@
   .sub{margin:0 0 14px;color:var(--muted);font-size:14px}
   .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:#eef2ff;color:#3730a3;font-weight:600;font-size:12px}
   .row{display:grid;gap:12px;grid-template-columns:1fr 1fr;margin-top:14px}
-  .btn{display:flex;align-items:center;justify-content:center;text-decoration:none;padding:14px;border-radius:12px;font-weight:700;border:1px solid #e5e7eb;box-shadow:var(--shadow);color:#111827}
+  .btn{display:flex;align-items:center;justify-content:center;text-decoration:none;padding:14px;border-radius:12px;font-weight:700;border:1px solid #e5e7eb;box-shadow:var(--shadow);color:#111827;background:#fff}
   .primary{background:#4f46e5;color:#fff;border-color:transparent}
   .ok{background:#16a34a;color:#052e16;border-color:transparent}
   .kpi{display:grid;gap:4px;margin-top:6px}
@@ -27,46 +27,57 @@
   .list{display:grid;gap:8px}
   .item{display:flex;justify-content:space-between;align-items:center;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px;background:#fff}
   .item small{color:#64748b}
+  .savewrap{margin-top:12px;border:1px dashed #d1d5db;border-radius:12px;padding:12px;background:#f9fafb}
+  .savehdr{font-size:13px;color:#475569;margin:0 0 8px}
+  .savegrid{display:grid;gap:10px;grid-template-columns:1fr auto}
+  .input{width:100%;padding:12px 14px;border:1px solid #e5e7eb;border-radius:12px;font-size:14px;background:#fff}
   .hide{display:none}
-  @media (max-width:700px){.row{grid-template-columns:1fr}}
+  @media (max-width:700px){.row{grid-template-columns:1fr} .savegrid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
+
+  <!-- Resume UI if someone lands without params -->
   <section id="resumeCard" class="card hide">
-  <h2 style="margin:0 0 8px;font-size:22px">Resume your order</h2>
-  <p class="sub">Paste your Order ID and (optionally) your email, or use your last order on this device.</p>
+    <h2 style="margin:0 0 8px;font-size:22px">Resume your order</h2>
+    <p class="sub">Paste your Order ID and (optionally) your email, or use your last order on this device.</p>
 
-  <div id="lastOrderRow" class="row hide" style="margin:0 0 12px">
-    <a id="resumeLastBtn" class="btn" href="#">⟲ Resume last order on this device</a>
-  </div>
+    <div id="lastOrderRow" class="row hide" style="margin:0 0 12px">
+      <a id="resumeLastBtn" class="btn" href="#">⟲ Resume last order on this device</a>
+    </div>
 
-  <div style="display:grid;gap:10px">
-    <input id="lookupOrder" placeholder="Order ID (e.g., Rieniets_25-09-01-001)"
-           style="padding:12px 14px;border:1px solid #e5e7eb;border-radius:12px;font-size:14px">
-    <input id="lookupEmail" placeholder="Email (optional)"
-           style="padding:12px 14px;border:1px solid #e5e7eb;border-radius:12px;font-size:14px">
-    <a id="lookupGo" class="btn primary" href="#">Go</a>
-  </div>
-</section>
+    <div style="display:grid;gap:10px">
+      <input id="lookupOrder" class="input" placeholder="Order ID (e.g., Rieniets_25-09-01-001)">
+      <input id="lookupEmail" class="input" placeholder="Email (optional)">
+      <a id="lookupGo" class="btn primary" href="#">Go</a>
+    </div>
+  </section>
+
+  <!-- Main actions -->
   <section class="card">
     <h1>Great! What’s next?</h1>
     <p class="sub">Choose an option below to continue.</p>
     <div id="orderChip" class="pill hide">Order&nbsp;<span id="orderText"></span></div>
+
     <div class="row">
-      <a id="addBtn" class="btn primary" href="#">＋ Add a stuffy</a>
-      <a id="doneBtn" class="btn ok" href="#">✅ I’m done — review my order</a>
+      <a id="addBtn"  class="btn primary" href="#">＋ Add a stuffy</a>
+      <a id="doneBtn" class="btn ok"      href="#">✅ I’m done — review my order</a>
     </div>
-    <div id="shareRow" class="row" style="margin-top:12px">
-  <a id="copyLink" class="btn" href="#">📋 Copy link</a>
-  <a id="shareNative" class="btn" href="#">🔗 Share…</a>
-  <a id="emailMe" class="btn" href="#">✉️ Email me</a>
-  <a id="smsMe" class="btn" href="#">📱 Text me</a>
-  <a id="qrLink" class="btn" target="_blank" rel="noopener">🧾 QR</a>
-</div>
+
+    <!-- Single “save this link” row -->
+    <div id="saveRow" class="savewrap hide">
+      <p class="savehdr">Need to take a break? Save this link to continue later where you left off:</p>
+      <div class="savegrid">
+        <input id="resumeUrl" class="input" readonly>
+        <a id="copyLink" class="btn" href="#">📋 Copy</a>
+      </div>
+    </div>
+
     <p id="syncNote" class="sub hide">Syncing your latest submission… this can take a moment.</p>
   </section>
 
+  <!-- Counts -->
   <section id="statsCard" class="card hide">
     <div class="kpi"><div class="label">Order email</div><div id="kpiEmail" class="value">—</div></div>
     <div class="kpi"><div class="label">Added so far</div><div id="kpiTotal" class="value">—</div></div>
@@ -88,6 +99,7 @@
     </div>
   </section>
 
+  <!-- List of items -->
   <section id="listCard" class="card hide">
     <h3 style="margin:8px 0 12px">Your submissions</h3>
     <div id="itemsList" class="list"></div>
@@ -95,18 +107,19 @@
 </div>
 
 <script>
-  // ======= EDIT THESE =======
-  const FORM_B_URL = "https://tally.so/r/w8XMZx";
-  const FORM_C_URL = "https://tally.so/r/mVKxrg";
-  const GAS_API    = "https://script.google.com/macros/s/AKfycbzI9Vs_eAy1ESqfCdeRGHS_FkLCf6bgB7YNhy8y6hI/exec"; // /exec
+  /* ====== EDIT THESE ====== */
+  const FORM_B_URL = "https://tally.so/r/w8XMZx";   // Add a stuffy
+  const FORM_C_URL = "https://tally.so/r/mVKxrg";   // I'm done
+  const GAS_API    = "https://script.google.com/macros/s/AKfycbzI9Vs_eAy1ESqfCdeRGHS_FkLCf6bgB7YNhy8y6hI/exec"; // Apps Script /exec
   const TARGETS    = { total:40, stages:{Basic:24, EV1:10, EV2:6}, types:{Magic:8, Beast:8, Earth:8, Sky:8, Water:8} };
-  // ==========================
+  /* ======================== */
 
-    const qp = new URLSearchParams(location.search);
+  const qp = new URLSearchParams(location.search);
   const orderId = qp.get("order_id") || "";
   const email   = qp.get("email") || "";
   const just    = qp.get("just") === "1";
 
+  // Elements
   const addBtn   = document.getElementById("addBtn");
   const doneBtn  = document.getElementById("doneBtn");
   const syncNote = document.getElementById("syncNote");
@@ -115,110 +128,57 @@
   const stats    = document.getElementById("statsCard");
   const kpiTotal = document.getElementById("kpiTotal");
   const kpiEmail = document.getElementById("kpiEmail");
-
-  // New elements for resume/share
   const resumeCard   = document.getElementById("resumeCard");
   const lastOrderRow = document.getElementById("lastOrderRow");
   const resumeLastBtn= document.getElementById("resumeLastBtn");
   const lookupOrder  = document.getElementById("lookupOrder");
   const lookupEmail  = document.getElementById("lookupEmail");
   const lookupGo     = document.getElementById("lookupGo");
-  const shareRow     = document.getElementById("shareRow");
+  const saveRow      = document.getElementById("saveRow");
+  const resumeUrl    = document.getElementById("resumeUrl");
   const copyLinkBtn  = document.getElementById("copyLink");
-  const qrLinkBtn    = document.getElementById("qrLink");
 
   const LS_LAST = "cc_last_order"; // stores {orderId,email}
-// Build the canonical resume URL
-function buildRouterUrl(oid, em){
-  const q = new URLSearchParams({ order_id: oid || "", email: em || "" });
-  return location.origin + location.pathname + "?" + q.toString();
-}
 
-const shareRow    = document.getElementById("shareRow");
-const copyLinkBtn = document.getElementById("copyLink");
-const shareBtn    = document.getElementById("shareNative");
-const emailBtn    = document.getElementById("emailMe");
-const smsBtn      = document.getElementById("smsMe");
-const qrBtn       = document.getElementById("qrLink");
-
-if (orderId) {
-  const myLink = buildRouterUrl(orderId, email);
-  // Show the row
-  if (shareRow) shareRow.classList.remove("hide");
-
-  // Copy
-  if (copyLinkBtn) copyLinkBtn.addEventListener("click", async (e)=>{
-    e.preventDefault();
-    try { await navigator.clipboard.writeText(myLink); copyLinkBtn.textContent = "✅ Copied"; }
-    catch { copyLinkBtn.textContent = "Copied (maybe)"; }
-    setTimeout(()=> copyLinkBtn.textContent = "📋 Copy link", 1400);
-  });
-
-  // Native share (falls back to copy)
-  if (shareBtn) shareBtn.addEventListener("click", async (e)=>{
-    e.preventDefault();
-    if (navigator.share){
-      try { await navigator.share({ title:"Cuddle Clash Order", url: myLink }); } catch(_) {}
-    } else {
-      copyLinkBtn.click();
-    }
-  });
-
-  // Email (mailto: opens their email app)
-  if (emailBtn){
-    const subj = encodeURIComponent("Your Cuddle Clash order link");
-    const body = encodeURIComponent(`Here's your resume link:\n\n${myLink}\n\nSave/bookmark this to keep adding stuffies.`);
-    const to   = encodeURIComponent(email || "");
-    emailBtn.href = `mailto:${to}?subject=${subj}&body=${body}`;
-  }
-
-  // SMS (works on phones)
-  if (smsBtn){
-    const smsBody = encodeURIComponent(`Cuddle Clash order link: ${myLink}`);
-    smsBtn.href = `sms:&body=${smsBody}`; // iOS/Android will handle
-  }
-
-  // QR code
-  if (qrBtn){
-    const qrSrc = "https://chart.googleapis.com/chart?cht=qr&chs=220x220&chl=" + encodeURIComponent(myLink);
-    qrBtn.href = qrSrc;
-  }
-}
-
-  // Helper: build canonical link
-  function link(base){ const q=new URLSearchParams({order_id:orderId,email:email}); return base+"?"+q.toString(); }
   function buildRouterUrl(oid, em){
     const q = new URLSearchParams({ order_id: oid || "", email: em || "" });
     return location.origin + location.pathname + "?" + q.toString();
   }
+  function link(base){
+    const q = new URLSearchParams({ order_id: orderId, email: email });
+    return base + "?" + q.toString();
+  }
 
-  // JSONP loader (unchanged)
-  function jsonp(url){ return new Promise((resolve,reject)=>{ const cb='cc_cb_'+Math.random().toString(36).slice(2);
-    const s=document.createElement('script'); s.src=url+(url.includes('?')?'&':'?')+'callback='+cb;
-    s.onerror=()=>{cleanup();reject(new Error('JSONP load error'))}; window[cb]=(d)=>{cleanup();resolve(d)};
-    function cleanup(){ delete window[cb]; if(s&&s.parentNode) s.parentNode.removeChild(s); }
-    document.head.appendChild(s); }); }
+  // JSONP loader (to avoid CORS)
+  function jsonp(url){
+    return new Promise((resolve, reject)=>{
+      const cb = 'cc_cb_' + Math.random().toString(36).slice(2);
+      const s  = document.createElement('script');
+      s.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cb;
+      s.onerror = ()=>{ cleanup(); reject(new Error('JSONP error')); };
+      window[cb] = (data)=>{ cleanup(); resolve(data); };
+      function cleanup(){ delete window[cb]; if (s && s.parentNode) s.parentNode.removeChild(s); }
+      document.head.appendChild(s);
+    });
+  }
 
-  // ---- NEW: If no params, show resume/lookup UI ----
-  if (!orderId || !email) {
+  // If missing params, show resume UI
+  if (!orderId || !email){
     resumeCard.classList.remove("hide");
-    // Offer "resume last" if stored
-    try {
+    try{
       const saved = JSON.parse(localStorage.getItem(LS_LAST) || "null");
-      if (saved && saved.orderId) {
+      if (saved && saved.orderId){
         lastOrderRow.classList.remove("hide");
         resumeLastBtn.href = buildRouterUrl(saved.orderId, saved.email || "");
       }
-    } catch(_) {}
-    // Wire the lookup "Go" button to redirect with params
+    }catch(_){}
     lookupGo.addEventListener("click",(e)=>{
       e.preventDefault();
       const oid = (lookupOrder.value||"").trim();
       const em  = (lookupEmail.value||"").trim();
-      if (!oid) { lookupOrder.focus(); return; }
+      if (!oid){ lookupOrder.focus(); return; }
       location.href = buildRouterUrl(oid, em);
     });
-    // Bail early (don’t run counts UI without params)
   } else {
     // Normal flow
     orderTxt.textContent = orderId;
@@ -226,29 +186,27 @@ if (orderId) {
     chip.classList.remove("hide");
     addBtn.href  = link(FORM_B_URL);
     doneBtn.href = link(FORM_C_URL);
-    init();
 
-    // Store as "last order" on this device
-    try { localStorage.setItem(LS_LAST, JSON.stringify({orderId, email})); } catch(_) {}
-
-    // Share helpers
+    // Show and populate save link row
     const myLink = buildRouterUrl(orderId, email);
-    if (shareRow){ shareRow.classList.remove("hide"); }
-    if (copyLinkBtn){
-      copyLinkBtn.addEventListener("click", async (e)=>{
-        e.preventDefault();
-        try { await navigator.clipboard.writeText(myLink); copyLinkBtn.textContent = "✅ Link copied"; }
-        catch { copyLinkBtn.textContent = "Copied (maybe)"; }
-        setTimeout(()=> copyLinkBtn.textContent = "📋 Copy resume link", 1500);
-      });
-    }
-    if (qrLinkBtn){
-      const qrSrc = "https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=" + encodeURIComponent(myLink);
-      qrLinkBtn.href = qrSrc;
-    }
+    saveRow.classList.remove("hide");
+    resumeUrl.value = myLink;
+    copyLinkBtn.addEventListener("click", async (e)=>{
+      e.preventDefault();
+      try { await navigator.clipboard.writeText(myLink); copyLinkBtn.textContent = "✅ Copied"; }
+      catch {
+        resumeUrl.select(); document.execCommand('copy');
+        copyLinkBtn.textContent = "✅ Copied";
+      }
+      setTimeout(()=> copyLinkBtn.textContent = "📋 Copy", 1300);
+    });
+
+    // Remember last order locally
+    try { localStorage.setItem(LS_LAST, JSON.stringify({orderId, email})); } catch(_){}
+
+    init();
   }
 
-  // ---- existing init/counts/items code stays the same ----
   async function init(){
     const baseTotal = Number(localStorage.getItem("cc_last_total_"+orderId) || "0");
     if (just){
@@ -273,16 +231,24 @@ if (orderId) {
   async function pollForIncrease(baseTotal, maxTries){
     let tries=0, delay=350, latest=null;
     while(tries<maxTries){
-      latest=await fetchCounts(); const total=Number(latest?.totals?.total||0);
-      if(total>baseTotal){ localStorage.setItem("cc_last_total_"+orderId, String(total)); return latest; }
-      await new Promise(r=>setTimeout(r,delay)); delay=Math.min(2000, Math.round(delay*1.7)); tries++;
-    } return latest;
+      latest = await fetchCounts();
+      const total = Number(latest?.totals?.total || 0);
+      if (total > baseTotal){
+        localStorage.setItem("cc_last_total_"+orderId, String(total));
+        return latest;
+      }
+      await new Promise(r=>setTimeout(r,delay));
+      delay = Math.min(2000, Math.round(delay*1.7));
+      tries++;
+    }
+    return latest;
   }
+
   function renderCounts(d){
     if (!d || !d.ok) return;
     stats.classList.remove("hide");
     const t=d.totals||{}, ty=t.types||{}, st=t.stages||{};
-    kpiTotal.textContent=t.total??"—";
+    kpiTotal.textContent = t.total ?? "—";
     set("sBasic", fmt(st.Basic, 24));
     set("sEV1",   fmt(st.EV1,   10));
     set("sEV2",   fmt(st.EV2,    6));
@@ -292,6 +258,7 @@ if (orderId) {
     set("tSky",   fmt(ty.Sky,    8));
     set("tWater", fmt(ty.Water,  8));
   }
+
   function renderItems(d){
     const listCard = document.getElementById("listCard");
     const itemsList= document.getElementById("itemsList");
@@ -312,6 +279,7 @@ if (orderId) {
     });
     listCard.classList.remove("hide");
   }
+
   function set(id,v){ const el=document.getElementById(id); if(el) el.textContent=(v==null?'—':v); }
   function fmt(cur,tgt){ const a=Number(cur||0); const b=Number(tgt||0); return `${a} / ${b}`; }
   function escapeHtml(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
