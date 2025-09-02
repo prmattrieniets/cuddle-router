@@ -57,6 +57,13 @@
       <a id="addBtn" class="btn primary" href="#">＋ Add a stuffy</a>
       <a id="doneBtn" class="btn ok" href="#">✅ I’m done — review my order</a>
     </div>
+    <div id="shareRow" class="row" style="margin-top:12px">
+  <a id="copyLink" class="btn" href="#">📋 Copy link</a>
+  <a id="shareNative" class="btn" href="#">🔗 Share…</a>
+  <a id="emailMe" class="btn" href="#">✉️ Email me</a>
+  <a id="smsMe" class="btn" href="#">📱 Text me</a>
+  <a id="qrLink" class="btn" target="_blank" rel="noopener">🧾 QR</a>
+</div>
     <p id="syncNote" class="sub hide">Syncing your latest submission… this can take a moment.</p>
   </section>
 
@@ -121,6 +128,62 @@
   const qrLinkBtn    = document.getElementById("qrLink");
 
   const LS_LAST = "cc_last_order"; // stores {orderId,email}
+// Build the canonical resume URL
+function buildRouterUrl(oid, em){
+  const q = new URLSearchParams({ order_id: oid || "", email: em || "" });
+  return location.origin + location.pathname + "?" + q.toString();
+}
+
+const shareRow    = document.getElementById("shareRow");
+const copyLinkBtn = document.getElementById("copyLink");
+const shareBtn    = document.getElementById("shareNative");
+const emailBtn    = document.getElementById("emailMe");
+const smsBtn      = document.getElementById("smsMe");
+const qrBtn       = document.getElementById("qrLink");
+
+if (orderId) {
+  const myLink = buildRouterUrl(orderId, email);
+  // Show the row
+  if (shareRow) shareRow.classList.remove("hide");
+
+  // Copy
+  if (copyLinkBtn) copyLinkBtn.addEventListener("click", async (e)=>{
+    e.preventDefault();
+    try { await navigator.clipboard.writeText(myLink); copyLinkBtn.textContent = "✅ Copied"; }
+    catch { copyLinkBtn.textContent = "Copied (maybe)"; }
+    setTimeout(()=> copyLinkBtn.textContent = "📋 Copy link", 1400);
+  });
+
+  // Native share (falls back to copy)
+  if (shareBtn) shareBtn.addEventListener("click", async (e)=>{
+    e.preventDefault();
+    if (navigator.share){
+      try { await navigator.share({ title:"Cuddle Clash Order", url: myLink }); } catch(_) {}
+    } else {
+      copyLinkBtn.click();
+    }
+  });
+
+  // Email (mailto: opens their email app)
+  if (emailBtn){
+    const subj = encodeURIComponent("Your Cuddle Clash order link");
+    const body = encodeURIComponent(`Here's your resume link:\n\n${myLink}\n\nSave/bookmark this to keep adding stuffies.`);
+    const to   = encodeURIComponent(email || "");
+    emailBtn.href = `mailto:${to}?subject=${subj}&body=${body}`;
+  }
+
+  // SMS (works on phones)
+  if (smsBtn){
+    const smsBody = encodeURIComponent(`Cuddle Clash order link: ${myLink}`);
+    smsBtn.href = `sms:&body=${smsBody}`; // iOS/Android will handle
+  }
+
+  // QR code
+  if (qrBtn){
+    const qrSrc = "https://chart.googleapis.com/chart?cht=qr&chs=220x220&chl=" + encodeURIComponent(myLink);
+    qrBtn.href = qrSrc;
+  }
+}
 
   // Helper: build canonical link
   function link(base){ const q=new URLSearchParams({order_id:orderId,email:email}); return base+"?"+q.toString(); }
