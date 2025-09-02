@@ -152,13 +152,19 @@
   }
 
   async function fetchCounts(){
-    try{
-      const url = `${GAS_API}?fn=getCounts&order_id=${encodeURIComponent(orderId)}&email=${encodeURIComponent(email)}`;
-      const res = await fetch(url, {cache:"no-store"});
-      if(!res.ok) return null;
-      return await res.json();
-    }catch(e){ return null; }
+  const url = `${GAS_API}?fn=getCounts&order_id=${encodeURIComponent(orderId)}&email=${encodeURIComponent(email)}`;
+  dbg("GET " + url);
+  try{
+    const res = await fetch(url, {cache:"no-store"});
+    dbg("STATUS " + res.status);
+    const txt = await res.text();
+    dbg(txt);
+    try { return JSON.parse(txt); } catch { return null; }
+  }catch(e){
+    dbg("Fetch error: " + e.message);
+    return null;
   }
+}
 
   async function pollForIncrease(baseTotal, maxTries){
     let tries = 0, delay = 350, latest = null;
