@@ -86,6 +86,17 @@
   const FORM_B_URL = "https://tally.so/r/w8XMZx";
   const FORM_C_URL = "https://tally.so/r/mVKxrg";
   const GAS_API    = "https://script.google.com/macros/s/AKfycbzI9Vs_eAy1ESqfCdeRGHS_FkLCf6bgB7YNhy8y6hI/exec";
+  <!-- DEBUG PANEL (remove later) -->
+<style>#dbg{white-space:pre-wrap;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px;margin-top:12px;font-size:12px;color:#7c2d12}</style>
+<div id="dbg" hidden></div>
+<script>
+  const DBG = document.getElementById('dbg');
+  function dbg(msg){
+    DBG.hidden = false;
+    DBG.textContent += (typeof msg === 'string' ? msg : JSON.stringify(msg,null,2)) + "\n";
+  }
+</script>
+
   const TARGETS    = { total:40, stages:{Basic:24, EV1:10, EV2:6}, types:{Magic:8, Beast:8, Earth:8, Sky:8, Water:8} };
   // ==========================
 
