@@ -33,6 +33,22 @@
 </head>
 <body>
 <div class="wrap">
+  <section id="resumeCard" class="card hide">
+  <h2 style="margin:0 0 8px;font-size:22px">Resume your order</h2>
+  <p class="sub">Paste your Order ID and (optionally) your email, or use your last order on this device.</p>
+
+  <div id="lastOrderRow" class="row hide" style="margin:0 0 12px">
+    <a id="resumeLastBtn" class="btn" href="#">⟲ Resume last order on this device</a>
+  </div>
+
+  <div style="display:grid;gap:10px">
+    <input id="lookupOrder" placeholder="Order ID (e.g., Rieniets_25-09-01-001)"
+           style="padding:12px 14px;border:1px solid #e5e7eb;border-radius:12px;font-size:14px">
+    <input id="lookupEmail" placeholder="Email (optional)"
+           style="padding:12px 14px;border:1px solid #e5e7eb;border-radius:12px;font-size:14px">
+    <a id="lookupGo" class="btn primary" href="#">Go</a>
+  </div>
+</section>
   <section class="card">
     <h1>Great! What’s next?</h1>
     <p class="sub">Choose an option below to continue.</p>
@@ -79,7 +95,7 @@
   const TARGETS    = { total:40, stages:{Basic:24, EV1:10, EV2:6}, types:{Magic:8, Beast:8, Earth:8, Sky:8, Water:8} };
   // ==========================
 
-  const qp = new URLSearchParams(location.search);
+    const qp = new URLSearchParams(location.search);
   const orderId = qp.get("order_id") || "";
   const email   = qp.get("email") || "";
   const just    = qp.get("just") === "1";
@@ -92,54 +108,94 @@
   const stats    = document.getElementById("statsCard");
   const kpiTotal = document.getElementById("kpiTotal");
   const kpiEmail = document.getElementById("kpiEmail");
-  const listCard = document.getElementById("listCard");
-  const itemsList= document.getElementById("itemsList");
 
-  // --- JSONP loader to avoid CORS ---
-  function jsonp(url) {
-    return new Promise((resolve, reject) => {
-      const cb = 'cc_cb_' + Math.random().toString(36).slice(2);
-      const s = document.createElement('script');
-      const sep = url.includes('?') ? '&' : '?';
-      s.src = url + sep + 'callback=' + cb;
-      s.onerror = () => { cleanup(); reject(new Error('JSONP load error')); };
-      window[cb] = (data) => { cleanup(); resolve(data); };
-      function cleanup(){ delete window[cb]; if (s && s.parentNode) s.parentNode.removeChild(s); }
-      document.head.appendChild(s);
+  // New elements for resume/share
+  const resumeCard   = document.getElementById("resumeCard");
+  const lastOrderRow = document.getElementById("lastOrderRow");
+  const resumeLastBtn= document.getElementById("resumeLastBtn");
+  const lookupOrder  = document.getElementById("lookupOrder");
+  const lookupEmail  = document.getElementById("lookupEmail");
+  const lookupGo     = document.getElementById("lookupGo");
+  const shareRow     = document.getElementById("shareRow");
+  const copyLinkBtn  = document.getElementById("copyLink");
+  const qrLinkBtn    = document.getElementById("qrLink");
+
+  const LS_LAST = "cc_last_order"; // stores {orderId,email}
+
+  // Helper: build canonical link
+  function link(base){ const q=new URLSearchParams({order_id:orderId,email:email}); return base+"?"+q.toString(); }
+  function buildRouterUrl(oid, em){
+    const q = new URLSearchParams({ order_id: oid || "", email: em || "" });
+    return location.origin + location.pathname + "?" + q.toString();
+  }
+
+  // JSONP loader (unchanged)
+  function jsonp(url){ return new Promise((resolve,reject)=>{ const cb='cc_cb_'+Math.random().toString(36).slice(2);
+    const s=document.createElement('script'); s.src=url+(url.includes('?')?'&':'?')+'callback='+cb;
+    s.onerror=()=>{cleanup();reject(new Error('JSONP load error'))}; window[cb]=(d)=>{cleanup();resolve(d)};
+    function cleanup(){ delete window[cb]; if(s&&s.parentNode) s.parentNode.removeChild(s); }
+    document.head.appendChild(s); }); }
+
+  // ---- NEW: If no params, show resume/lookup UI ----
+  if (!orderId || !email) {
+    resumeCard.classList.remove("hide");
+    // Offer "resume last" if stored
+    try {
+      const saved = JSON.parse(localStorage.getItem(LS_LAST) || "null");
+      if (saved && saved.orderId) {
+        lastOrderRow.classList.remove("hide");
+        resumeLastBtn.href = buildRouterUrl(saved.orderId, saved.email || "");
+      }
+    } catch(_) {}
+    // Wire the lookup "Go" button to redirect with params
+    lookupGo.addEventListener("click",(e)=>{
+      e.preventDefault();
+      const oid = (lookupOrder.value||"").trim();
+      const em  = (lookupEmail.value||"").trim();
+      if (!oid) { lookupOrder.focus(); return; }
+      location.href = buildRouterUrl(oid, em);
     });
-  }
-
-  function link(base){
-    const q = new URLSearchParams({order_id:orderId, email:email});
-    return base + "?" + q.toString();
-  }
-
-  if (orderId && email){
+    // Bail early (don’t run counts UI without params)
+  } else {
+    // Normal flow
     orderTxt.textContent = orderId;
     kpiEmail.textContent = email;
     chip.classList.remove("hide");
     addBtn.href  = link(FORM_B_URL);
     doneBtn.href = link(FORM_C_URL);
     init();
-  } else {
-    addBtn.removeAttribute("href");
-    doneBtn.removeAttribute("href");
+
+    // Store as "last order" on this device
+    try { localStorage.setItem(LS_LAST, JSON.stringify({orderId, email})); } catch(_) {}
+
+    // Share helpers
+    const myLink = buildRouterUrl(orderId, email);
+    if (shareRow){ shareRow.classList.remove("hide"); }
+    if (copyLinkBtn){
+      copyLinkBtn.addEventListener("click", async (e)=>{
+        e.preventDefault();
+        try { await navigator.clipboard.writeText(myLink); copyLinkBtn.textContent = "✅ Link copied"; }
+        catch { copyLinkBtn.textContent = "Copied (maybe)"; }
+        setTimeout(()=> copyLinkBtn.textContent = "📋 Copy resume link", 1500);
+      });
+    }
+    if (qrLinkBtn){
+      const qrSrc = "https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=" + encodeURIComponent(myLink);
+      qrLinkBtn.href = qrSrc;
+    }
   }
 
+  // ---- existing init/counts/items code stays the same ----
   async function init(){
     const baseTotal = Number(localStorage.getItem("cc_last_total_"+orderId) || "0");
     if (just){
       syncNote.classList.remove("hide");
-      const d1 = await pollForIncrease(baseTotal, 8);
-      renderCounts(d1);
-      const d2 = await fetchItems();
-      renderItems(d2);
+      const d1 = await pollForIncrease(baseTotal, 8); renderCounts(d1);
+      const d2 = await fetchItems();                 renderItems(d2);
       syncNote.classList.add("hide");
     } else {
-      const d1 = await fetchCounts();
-      renderCounts(d1);
-      const d2 = await fetchItems();
-      renderItems(d2);
+      const d1 = await fetchCounts(); renderCounts(d1);
+      const d2 = await fetchItems();  renderItems(d2);
     }
   }
 
@@ -147,69 +203,55 @@
     const url = `${GAS_API}?fn=getCounts&order_id=${encodeURIComponent(orderId)}${email?`&email=${encodeURIComponent(email)}`:''}`;
     try{ return await jsonp(url); }catch{ return null; }
   }
-
   async function fetchItems(){
     const url = `${GAS_API}?fn=getItems&order_id=${encodeURIComponent(orderId)}${email?`&email=${encodeURIComponent(email)}`:''}`;
     try{ return await jsonp(url); }catch{ return null; }
   }
-
   async function pollForIncrease(baseTotal, maxTries){
-    let tries = 0, delay = 350, latest = null;
-    while (tries < maxTries){
-      latest = await fetchCounts();
-      const total = Number(latest?.totals?.total || 0);
-      if (total > baseTotal) {
-        localStorage.setItem("cc_last_total_"+orderId, String(total));
-        return latest;
-      }
-      await new Promise(r => setTimeout(r, delay));
-      delay = Math.min(2000, Math.round(delay * 1.7));
-      tries++;
-    }
-    return latest;
+    let tries=0, delay=350, latest=null;
+    while(tries<maxTries){
+      latest=await fetchCounts(); const total=Number(latest?.totals?.total||0);
+      if(total>baseTotal){ localStorage.setItem("cc_last_total_"+orderId, String(total)); return latest; }
+      await new Promise(r=>setTimeout(r,delay)); delay=Math.min(2000, Math.round(delay*1.7)); tries++;
+    } return latest;
   }
-
   function renderCounts(d){
     if (!d || !d.ok) return;
     stats.classList.remove("hide");
-    const t  = d.totals || {};
-    const ty = t.types  || {};
-    const st = t.stages || {};
-    kpiTotal.textContent = t.total ?? "—";
-    set("sBasic", fmt(st.Basic, TARGETS.stages.Basic));
-    set("sEV1",   fmt(st.EV1,   TARGETS.stages.EV1));
-    set("sEV2",   fmt(st.EV2,   TARGETS.stages.EV2));
-    set("tMagic", fmt(ty.Magic, TARGETS.types.Magic));
-    set("tBeast", fmt(ty.Beast, TARGETS.types.Beast));
-    set("tEarth", fmt(ty.Earth, TARGETS.types.Earth));
-    set("tSky",   fmt(ty.Sky,   TARGETS.types.Sky));
-    set("tWater", fmt(ty.Water, TARGETS.types.Water));
+    const t=d.totals||{}, ty=t.types||{}, st=t.stages||{};
+    kpiTotal.textContent=t.total??"—";
+    set("sBasic", fmt(st.Basic, 24));
+    set("sEV1",   fmt(st.EV1,   10));
+    set("sEV2",   fmt(st.EV2,    6));
+    set("tMagic", fmt(ty.Magic,  8));
+    set("tBeast", fmt(ty.Beast,  8));
+    set("tEarth", fmt(ty.Earth,  8));
+    set("tSky",   fmt(ty.Sky,    8));
+    set("tWater", fmt(ty.Water,  8));
   }
-
   function renderItems(d){
-    if (!d || !d.ok) return;
-    itemsList.innerHTML = '';
-    const arr = d.items || [];
-    if (arr.length === 0){
+    const listCard = document.getElementById("listCard");
+    const itemsList= document.getElementById("itemsList");
+    if (!listCard || !itemsList) return;
+    itemsList.innerHTML = "";
+    if (!d || !d.ok || !Array.isArray(d.items) || d.items.length===0){
       listCard.classList.remove("hide");
       itemsList.innerHTML = '<div class="item"><strong>No stuffies yet</strong><small>Add one to get started</small></div>';
       return;
     }
-    arr.forEach(it=>{
-      const div = document.createElement('div');
-      div.className = 'item';
-      const name  = it.name  || '—';
-      const stage = it.stage || '—';
-      const type  = it.type  || '—';
-      div.innerHTML = `<strong>${escapeHtml(name)}</strong><small>${escapeHtml(stage)} · ${escapeHtml(type)}</small>`;
+    d.items.forEach(it=>{
+      const div=document.createElement('div'); div.className='item';
+      const name=escapeHtml(it.name||'—');
+      const stage=escapeHtml(it.stage||'—');
+      const type=escapeHtml(it.type||'—');
+      div.innerHTML = `<strong>${name}</strong><small>${stage} · ${type}</small>`;
       itemsList.appendChild(div);
     });
     listCard.classList.remove("hide");
   }
-
-  function set(id, v){ const el = document.getElementById(id); if (el) el.textContent = (v==null?'—':v); }
-  function fmt(cur, tgt){ const a = Number(cur||0); const b = Number(tgt||0); return `${a} / ${b}`; }
-  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  function set(id,v){ const el=document.getElementById(id); if(el) el.textContent=(v==null?'—':v); }
+  function fmt(cur,tgt){ const a=Number(cur||0); const b=Number(tgt||0); return `${a} / ${b}`; }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 </script>
 </body>
 </html>
