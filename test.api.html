@@ -1,0 +1,29 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Cuddle API Tester</title>
+<pre id="out">Loading…</pre>
+<script>
+  // 👇 EDIT your /exec URL only
+  const GAS_API = "https://script.google.com/macros/s/AKfycbzI9Vs_eAy1ESqfCdeRGHS_FkLCf6bgB7YNhy8y6hI/exec";
+
+  const qp = new URLSearchParams(location.search);
+  const order = qp.get("12345654321") || "";
+  const email = qp.get("matthew@therocklbc.org") || "";
+
+  async function run(){
+    if(!order){
+      out.textContent = "Add ?order_id=YOUR_ID (and optionally &email=you%40mail.com) to the URL.";
+      return;
+    }
+    const url = `${GAS_API}?fn=getCounts&order_id=${encodeURIComponent(order)}${email?`&email=${encodeURIComponent(email)}`:''}`;
+    out.textContent = `GET ${url}\n\nWaiting…`;
+    try{
+      const res = await fetch(url, {cache:"no-store"});
+      const txt = await res.text();
+      out.textContent = `STATUS ${res.status}\n\n${txt}`;
+    }catch(err){
+      out.textContent = "Fetch error:\n" + err.stack;
+    }
+  }
+  run();
+</script>
